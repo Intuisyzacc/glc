@@ -1,0 +1,373 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GLC Alumni Directory</title>
+<style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #fff;
+            color: #333;
+        }
+        .container {
+            width: 90%;
+            margin: auto;
+            max-width: 600px;
+        }
+        .header {
+            background-color: #003087;
+            color: #fff;
+            padding: 15px;
+            text-align: center;
+            border-bottom: 2px solid #ddd;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .nav {
+            background-color: #f8f8f8;
+            padding: 10px;
+            margin: 10px 0;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        .nav a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #003087;
+            font-size: 1em;
+            font-weight: 500;
+        }
+        .nav a.active {
+            font-weight: bold;
+            text-decoration: underline;
+        }
+        .section {
+            display: none;
+            background: #fff;
+            padding: 15px;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+        .section.active {
+            display: block;
+        }
+        .main-heading {
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            color: #003087;
+            background-color: #f8f8f8;
+        }
+        .cta-container {
+            text-align: center;
+            margin: 15px 0;
+        }
+        .cta-button {
+            background-color: #003087;
+            color: #fff;
+            padding: 10px 20px;
+            display: inline-block;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 1em;
+            transition: background-color 0.3s;
+        }
+        .cta-button:hover {
+            background-color: #001f5f;
+        }
+        .dropdowns {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-direction: column;
+        }
+        select {
+            padding: 8px;
+            width: 100%;
+            border: 1px solid #ddd;
+            font-size: 0.9em;
+            color: #333;
+            background-color: #fff;
+        }
+        .member-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        .member-card {
+            background: #f8f8f8;
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            font-size: 0.9em;
+            color: #333;
+        }
+        .member-card img {
+            width: 80px;
+            height: 80px;
+            display: block;
+            margin: 0 auto;
+        }
+        .member-details {
+            text-align: center;
+            font-size: 0.9em;
+        }
+        .member-details img {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto;
+        }
+        .whatsapp-button {
+            background-color: #003087;
+            color: #fff;
+            padding: 8px 15px;
+            display: inline-block;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9em;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        .whatsapp-button:hover {
+            background-color: #001f5f;
+        }
+        .event-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .event-item {
+            background: #f8f8f8;
+            padding: 10px;
+            border: 1px solid #ddd;
+            font-size: 0.9em;
+            color: #333;
+        }
+        .event-item img {
+            width: 80px;
+            height: 80px;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        .footer {
+            background-color: #003087;
+            color: #fff;
+            padding: 15px;
+            text-align: center;
+            border-top: 2px solid #ddd;
+            font-size: 0.8em;
+            margin-top: 15px;
+        }
+        @media (max-width: 375px) {
+            .container {
+                width: 95%;
+            }
+            .nav a {
+                display: block;
+                margin: 5px 0;
+            }
+            .member-card img, .event-item img {
+                width: 60px;
+                height: 60px;
+            }
+            .member-details img {
+                width: 100px;
+                height: 100px;
+            }
+        }
+    </style>
+</head>
+<body onload="showSection('home')">
+<div class="header">GLC Alumni Directory</div>
+<div class="nav">
+<a href="#" onclick="showSection('home')">Home</a>
+<a href="#" onclick="showSection('batch-details')">Batch Details</a>
+<a href="#" onclick="showSection('events')">Events</a>
+</div>
+<div class="container">
+<!-- Homepage -->
+<div class="section active" id="home">
+<div class="main-heading">Welcome to GLC Alumni Directory - Celebrating 100 Years</div>
+<div class="section">
+<p>Introduction: Connecting Alumni Since 1948</p>
+<p>Placeholder: The Government Law College Alumni Directory is a platform to reconnect alumni, celebrate our 100th anniversary, and share achievements.</p>
+</div>
+<div class="cta-container">
+<a class="cta-button" href="#" onclick="showSection('batch-details')">Explore Batch</a>
+</div>
+</div>
+<!-- Batch Details -->
+<div class="section" id="batch-details">
+<div class="dropdowns">
+<select id="year" onchange="filterMembers()">
+<option value="all">Select Year</option>
+<option value="1948">1948</option>
+<option value="1965">1965</option>
+<option value="1966">1966</option>
+<option value="1967">1967</option>
+<option value="1968">1968</option>
+<option value="1980">1980</option>
+</select>
+<select id="batch" onchange="filterMembers()">
+<option value="all">Select Batch</option>
+<option value="2-Year">2-Year</option>
+<option value="3-Year">3-Year</option>
+<option value="Evening">Evening</option>
+</select>
+</div>
+<div class="member-grid" id="member-grid"></div>
+</div>
+<!-- Member Details -->
+<div class="section" id="member-details">
+<div class="member-details" id="member-details-content">
+<p>Select a member from Batch Details to view</p>
+</div>
+</div>
+<!-- Events -->
+<div class="section" id="events">
+<div class="event-list">
+<div class="event-item">
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEASURBVHhe7dExAQAwDMCg3/8vOIIgqA8E+5oAAADwOxgAAAAA4ABAAAAAAgAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAGg1j0q7yl6EAAAAASUVORK5CYII="/>
+<p>Event Title: 100th Anniversary Celebration</p>
+<p>Date: August 15, 2025</p>
+<p>Description: Join us to celebrate 100 years of GLC excellence.</p>
+<p>Location: GLC Campus, Ernakulam</p>
+</div>
+<div class="event-item">
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEASURBVHhe7dExAQAwDMCg3/8vOIIgqA8E+5oAAADwOxgAAAAA4ABAAAAAAgAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAGg1j0q7yl6EAAAAASUVORK5CYII="/>
+<p>Event Title: Alumni Reunion 2025</p>
+<p>Date: September 10, 2025</p>
+<p>Description: Annual gathering of GLC alumni to reconnect and network.</p>
+<p>Location: High Court, Ernakulam</p>
+</div>
+</div>
+</div>
+</div>
+<div class="footer">Copyright © 2025 GLC | Contact: info@glc.edu | WhatsApp: +91-1234567890</div>
+<script>
+        // Sample data from Excel (1965–1968, 3-Year batch for demo) with dummy WhatsApp
+        const members = [
+            { year: '1965', batch: '3-Year', name: 'TV Ramakrishnan', place: 'Not Specified', whatsapp: '+91-91000000' },
+            { year: '1966', batch: '3-Year', name: 'P Santhalingam', place: 'High Court', whatsapp: '+91-91000000' },
+            { year: '1967', batch: '3-Year', name: 'JB Koshy', place: 'High Court', whatsapp: '+91-91000000' },
+            { year: '1968', batch: '3-Year', name: 'No Members', place: '', whatsapp: '' }
+        ];
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
+            document.querySelectorAll('.nav a').forEach(link => link.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            document.querySelector(`.nav a[onclick="showSection('${sectionId}')"]`).classList.add('active');
+            if (sectionId === 'batch-details') filterMembers();
+            if (sectionId === 'member-details') showMemberDetails();
+        }
+
+        function filterMembers() {
+            const year = document.getElementById('year').value;
+            const batch = document.getElementById('batch').value;
+            const grid = document.getElementById('member-grid');
+            grid.innerHTML = '';
+            const filtered = members.filter(m => 
+                (year === 'all' || m.year === year) && 
+                (batch === 'all' || m.batch === batch) && 
+                m.name !== 'No Members'
+            );
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="member-card">No Members Found</div>';
+            } else {
+                filtered.forEach(member => {
+    const card = document.createElement('div');
+    card.className = 'member-card';
+    const imgHTML = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEASURBVHhe7dExAQAwDMCg3/8vOIIgqA8E+5oAAADwOxgAAAAA4ABAAAAAAgAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAGg1j0q7yl6EAAAAASUVORK5CYII=">';
+    const nameHTML = `<br>${member.name}<br>`;
+    const link = document.createElement('a');
+    link.href = '#';
+    link.textContent = 'See More';
+    link.className = 'see-more-link';
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        showMemberDetails(member.name);
+    });
+    card.innerHTML = imgHTML + nameHTML;
+    card.appendChild(link);
+    grid.appendChild(card);
+});
+            }
+        }
+
+        function showMemberDetails(name) {
+            if (!name) name = members[0].name; // Default to first member
+            const member = members.find(m => m.name === name) || members[0];
+            document.getElementById('member-details-content').innerHTML = `
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEASURBVHhe7dExAQAwDMCg3/8vOIIgqA8E+5oAAADwOxgAAAAA4ABAAAAAAgAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAAAACAAAAAAAgAAAGg1j0q7yl6EAAAAASUVORK5CYII="><br>
+                Name: ${member.name}<br>
+                Batch: ${member.year} ${member.batch}<br>
+                Principal Place of Practice: ${member.place}<br>
+                WhatsApp: ${member.whatsapp}<br>
+                <a href="https://wa.me/${member.whatsapp}?text=GLC Alumni: ${member.name}, ${member.place}" class="whatsapp-button">Share via WhatsApp</a>
+            `;
+            showSection('member-details');
+        }
+
+        // Ensure navigation works correctly
+        window.onload = function() {
+            const alumniLink = document.getElementById('alumni-directory-link');
+            alumniLink.href = window.location.href;
+            alumniLink.onclick = function(e) {
+                e.preventDefault();
+                showSection('home');
+            };
+        };
+    </script>
+</body>
+</html>
